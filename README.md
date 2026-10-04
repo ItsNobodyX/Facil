@@ -39,20 +39,6 @@ anywhere, and it will keep working.
 
 > **Private by design.** Your files never leave your device.
 
-## Screenshots
-
-| Home (light) | Home (dark) |
-| --- | --- |
-| ![Fácil home page, light theme](screenshots/home-light.png) | ![Fácil home page, dark theme](screenshots/home-dark.png) |
-
-| Compress Video | Base64 to Photo |
-| --- | --- |
-| ![Compress Video tool](screenshots/tool-compress-video.png) | ![Base64 to Photo tool](screenshots/tool-base64-to-photo.png) |
-
-<p align="center">
-  <img src="screenshots/mobile-light.png" alt="Fácil on a mobile phone" width="300">
-</p>
-
 ## Features
 
 ### 🎬 Compress Video
@@ -186,9 +172,9 @@ python3 -m http.server 8000
 
 Fácil is a static site. Drop the files onto any static host:
 
-- **GitHub Pages** — push to a repo, enable Pages on the root.
-- **Vercel / Netlify** — import the repo; no build command, no output directory needed.
-- **Any web server** — copy the files into your web root.
+- **GitHub Pages** - push to a repo, enable Pages on the root.
+- **Vercel / Netlify** - import the repo; no build command, no output directory needed.
+- **Any web server** - copy the files into your web root.
 
 ## Browser support
 
@@ -278,7 +264,7 @@ Yes — copy the files to any static host. There is no backend to configure.
 
 ## Contributing Guidelines
 
-Thanks for wanting to help. Contributions of every size are welcome — bug
+Thanks for wanting to help. Contributions of every size are welcome - bug
 reports, fixes, documentation, and features.
 
 ### Ways to contribute
