@@ -36,20 +36,6 @@ anywhere, and it will keep working.
 
 > **Private by design.** Your files never leave your device.
 
-## Screenshots
-
-| Home (light) | Home (dark) |
-| --- | --- |
-| ![Fácil home page, light theme](screenshots/home-light.png) | ![Fácil home page, dark theme](screenshots/home-dark.png) |
-
-| Compress Video | Base64 to Photo |
-| --- | --- |
-| ![Compress Video tool](screenshots/tool-compress-video.png) | ![Base64 to Photo tool](screenshots/tool-base64-to-photo.png) |
-
-<p align="center">
-  <img src="screenshots/mobile-light.png" alt="Fácil on a mobile phone" width="300">
-</p>
-
 ## Features
 
 ### 🎬 Compress Video
@@ -228,9 +214,23 @@ project's principles: **minimal design, real functionality, and no backend.**
 
 ## License
 
-No license has been specified for this project yet. Until one is added, all
-rights are reserved by the author. If you intend to reuse this code, please
-open an issue to discuss a suitable license.
+[![License: MIT](https://img.shields.io/badge/license-MIT-111111?style=flat-square)](LICENSE)
+
+Released under the [MIT License].
+
+You are free to use, copy, modify, merge, publish, distribute, sublicense, and
+sell copies of this software, provided the copyright notice and this permission
+notice are included. The software is provided "as is", without warranty of any
+kind.
+
+Copyright © 2026 ItsNobodyX.
+
+## Star the project
+
+If Fácil saved you a few minutes, please consider giving it a star. It helps
+more people find the project and it genuinely motivates continued work.
+
+[![Star on GitHub](https://img.shields.io/github/stars/USERNAME/REPO?style=social)](https://github.com/USERNAME/REPO)
 
 ## Author
 
