@@ -99,14 +99,14 @@ time and takes roughly as long as the video itself.
 
 There is nothing to install or build.
 
-### Option 1 — just open it
+### Option 1 - just open it
 ```bash
 git clone https://github.com/ItsNobodyX/facil.git
 cd facil
 # open index.html in your browser
 ```
 
-### Option 2 — serve locally (recommended)
+### Option 2 - serve locally (recommended)
 A local server avoids any browser file-access restrictions:
 ```bash
 # Python 3
@@ -118,9 +118,9 @@ python3 -m http.server 8000
 
 Fácil is a static site. Drop the files onto any static host:
 
-- **GitHub Pages** — push to a repo, enable Pages on the root.
+- **GitHub Pages** - push to a repo, enable Pages on the root.
 - **Vercel / Netlify** — import the repo; no build command, no output directory needed.
-- **Any web server** — copy the files into your web root.
+- **Any web server** - copy the files into your web root.
 
 ## Browser support
 
