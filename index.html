@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="description" content="Compress videos and images and convert media to and from Base64 directly in your browser. No uploads, no accounts.">
+<title>Fácil — Simple Video &amp; Image Tools</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<script>(function(){try{var t=localStorage.getItem("facil-theme");if(!t)t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="index.html">Fácil</a>
+    <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ================= HOME ================= -->
+  <section id="homeView">
+    <div class="container hero">
+      <h1>Fácil</h1>
+      <p class="tagline">Simple tools. No hassle.</p>
+      <p class="lead">Compress videos and images, convert media to Base64, and convert Base64 back into usable files — directly in your browser.</p>
+      <p class="privacy-line">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+        Your files stay on your device.
+      </p>
+    </div>
+
+    <div class="container">
+      <div class="section-head">
+        <h2>Tools</h2>
+        <p>Six utilities. All local.</p>
+      </div>
+      <div class="tool-grid">
+        <button class="tool-card" data-tool="compress-video" type="button">
+          <h3>Compress Video</h3>
+          <p>Reduce video size directly in your browser.</p>
+          <span class="card-arrow">Open &rarr;</span>
+        </button>
+        <button class="tool-card" data-tool="compress-image" type="button">
+          <h3>Compress Image</h3>
+          <p>Reduce image size without uploading it.</p>
+          <span class="card-arrow">Open &rarr;</span>
+        </button>
+        <button class="tool-card" data-tool="video-to-base64" type="button">
+          <h3>Video to Base64</h3>
+          <p>Convert a video into a Base64 Data URL.</p>
+          <span class="card-arrow">Open &rarr;</span>
+        </button>
+        <button class="tool-card" data-tool="base64-to-video" type="button">
+          <h3>Base64 to Video</h3>
+          <p>Turn Base64 back into a playable video.</p>
+          <span class="card-arrow">Open &rarr;</span>
+        </button>
+        <button class="tool-card" data-tool="photo-to-base64" type="button">
+          <h3>Photo to Base64</h3>
+          <p>Convert an image into Base64.</p>
+          <span class="card-arrow">Open &rarr;</span>
+        </button>
+        <button class="tool-card" data-tool="base64-to-photo" type="button">
+          <h3>Base64 to Photo</h3>
+          <p>Turn Base64 back into an image.</p>
+          <span class="card-arrow">Open &rarr;</span>
+        </button>
+      </div>
+
+      <div class="section-head">
+        <h2>Private by design</h2>
+      </div>
+      <p style="max-width:660px">Everything runs on your device. Fácil does not upload your files, does not require an account, and does not use analytics or trackers. What you process here stays here.</p>
+    </div>
+  </section>
+
+  <!-- ================= VIDEO COMPRESSOR ================= -->
+  <section class="tool-view" id="tool-compress-video" hidden>
+    <div class="container">
+      <a class="back-link" href="#home">&larr; All tools</a>
+      <h1>Compress Video</h1>
+      <p class="tool-sub">Reduce a video's file size in your browser. Choose a target size and Fácil encodes a new version locally. Nothing is uploaded.</p>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="field">
+            <label for="vc-file">Select video</label>
+            <input id="vc-file" type="file" accept="video/mp4,video/webm,video/quicktime,video/x-m4v,video/*">
+            <p class="help">MP4, WebM, MOV, M4V and other browser-supported formats.</p>
+          </div>
+
+          <div class="file-info" id="vc-info" hidden>
+            <p class="file-name" id="vc-name">—</p>
+            <dl>
+              <dt>Size</dt><dd id="vc-size">—</dd>
+              <dt>Duration</dt><dd id="vc-duration">—</dd>
+              <dt>Resolution</dt><dd id="vc-res">—</dd>
+              <dt>Format</dt><dd id="vc-format">—</dd>
+            </dl>
+          </div>
+
+          <div id="vc-controls" hidden>
+            <div class="field">
+              <span class="help" style="margin:0 0 6px;display:block;font-weight:500;color:var(--text);font-size:.85rem">Target size</span>
+              <div class="chip-row" role="radiogroup" aria-label="Target size">
+                <label class="chip"><input type="radio" name="vc-target" value="30">30 MB</label>
+                <label class="chip"><input type="radio" name="vc-target" value="25">25 MB</label>
+                <label class="chip"><input type="radio" name="vc-target" value="20">20 MB</label>
+                <label class="chip"><input type="radio" name="vc-target" value="custom">Custom</label>
+              </div>
+            </div>
+            <div class="field" id="vc-custom-wrap" hidden>
+              <label for="vc-custom">Custom target (MB)</label>
+              <input id="vc-custom" type="number" min="0.1" step="0.1" value="15" inputmode="decimal">
+            </div>
+            <button class="btn btn-primary btn-block" id="vc-run" type="button">Compress Video</button>
+          </div>
+
+          <div class="progress-wrap" id="vc-progress" hidden>
+            <p class="progress-status" id="vc-status">Preparing video…</p>
+            <div class="progress-track"><div class="progress-bar" id="vc-bar"></div></div>
+          </div>
+          <div class="msg error" id="vc-error" hidden role="alert"></div>
+        </div>
+
+        <div>
+          <div class="preview-box" id="vc-preview">
+            <span class="preview-empty">No video selected</span>
+          </div>
+          <div class="result-box" id="vc-result" hidden>
+            <p class="result-title">Complete</p>
+            <div class="result-stats">
+              <div class="stat"><div class="k">Original</div><div class="v" id="vc-r-orig">—</div></div>
+              <div class="stat"><div class="k">Compressed</div><div class="v" id="vc-r-new">—</div></div>
+              <div class="stat"><div class="k">Saved</div><div class="v ok" id="vc-r-saved">—</div></div>
+              <div class="stat"><div class="k">Reduction</div><div class="v ok" id="vc-r-pct">—</div></div>
+            </div>
+            <button class="btn btn-primary btn-block" id="vc-download" type="button">Download Compressed Video</button>
+          </div>
+          <p class="help mt-16">Compression re-encodes the video in real time, so it takes about as long as the video's duration. The output is a close approximation of your target, not an exact figure.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= IMAGE COMPRESSOR ================= -->
+  <section class="tool-view" id="tool-compress-image" hidden>
+    <div class="container">
+      <a class="back-link" href="#home">&larr; All tools</a>
+      <h1>Compress Image</h1>
+      <p class="tool-sub">Shrink an image without uploading it. Pick a quality or aim for a target size, and choose the output format.</p>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="field">
+            <label for="ic-file">Select image</label>
+            <input id="ic-file" type="file" accept="image/jpeg,image/png,image/webp,image/*">
+          </div>
+
+          <div class="file-info" id="ic-info" hidden>
+            <p class="file-name" id="ic-name">—</p>
+            <dl>
+              <dt>Size</dt><dd id="ic-size">—</dd>
+              <dt>Dimensions</dt><dd id="ic-dims">—</dd>
+              <dt>Format</dt><dd id="ic-fmt">—</dd>
+            </dl>
+          </div>
+
+          <div id="ic-controls" hidden>
+            <div class="field">
+              <label for="ic-quality">Compression quality: <span id="ic-q-val">80</span>%</label>
+              <input id="ic-quality" type="range" min="10" max="100" value="80" step="1">
+              <p class="help">Lower quality means a smaller file. Applies to JPEG and WebP.</p>
+            </div>
+            <div class="field">
+              <label for="ic-format">Output format</label>
+              <select id="ic-format">
+                <option value="image/jpeg">JPEG</option>
+                <option value="image/webp">WebP</option>
+                <option value="image/png">PNG (lossless)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="ic-target">Target size (optional, KB)</label>
+              <input id="ic-target" type="number" min="1" step="1" placeholder="e.g. 300" inputmode="numeric">
+              <p class="help">Leave blank to use the quality slider. Target size is not available for PNG.</p>
+            </div>
+            <button class="btn btn-primary btn-block" id="ic-run" type="button">Compress Image</button>
+          </div>
+
+          <div class="msg error" id="ic-error" hidden role="alert"></div>
+        </div>
+
+        <div>
+          <div class="preview-box" id="ic-preview">
+            <span class="preview-empty">No image selected</span>
+          </div>
+          <div class="result-box" id="ic-result" hidden>
+            <p class="result-title">Complete</p>
+            <div class="result-stats">
+              <div class="stat"><div class="k">Original</div><div class="v" id="ic-r-orig">—</div></div>
+              <div class="stat"><div class="k">Compressed</div><div class="v" id="ic-r-new">—</div></div>
+              <div class="stat"><div class="k">Saved</div><div class="v ok" id="ic-r-saved">—</div></div>
+              <div class="stat"><div class="k">Reduction</div><div class="v ok" id="ic-r-pct">—</div></div>
+            </div>
+            <button class="btn btn-primary btn-block" id="ic-download" type="button">Download Compressed Image</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= VIDEO TO BASE64 ================= -->
+  <section class="tool-view" id="tool-video-to-base64" hidden>
+    <div class="container">
+      <a class="back-link" href="#home">&larr; All tools</a>
+      <h1>Video to Base64</h1>
+      <p class="tool-sub">Convert a video into a Base64 Data URL, entirely on your device.</p>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="field">
+            <label for="vb-file">Select video</label>
+            <input id="vb-file" type="file" accept="video/*">
+          </div>
+          <div class="file-info" id="vb-info" hidden>
+            <p class="file-name" id="vb-name">—</p>
+            <dl>
+              <dt>Size</dt><dd id="vb-size">—</dd>
+              <dt>Format</dt><dd id="vb-format">—</dd>
+            </dl>
+          </div>
+          <button class="btn btn-primary btn-block" id="vb-run" type="button" hidden>Convert to Base64</button>
+          <div class="progress-wrap" id="vb-progress" hidden>
+            <p class="progress-status" id="vb-status">Reading file…</p>
+            <div class="progress-track"><div class="progress-bar" id="vb-bar"></div></div>
+          </div>
+          <div class="msg warn" id="vb-warn" hidden>Large videos can produce extremely large Base64 strings (roughly 33% bigger than the file itself). This may use significant memory and the text may be slow to copy.</div>
+          <div class="msg error" id="vb-error" hidden role="alert"></div>
+        </div>
+
+        <div>
+          <div class="field">
+            <div class="spread">
+              <label for="vb-output">Base64 output</label>
+              <span class="count-note" id="vb-count"></span>
+            </div>
+            <textarea id="vb-output" readonly placeholder="Base64 output appears here…" spellcheck="false" aria-label="Base64 output"></textarea>
+          </div>
+          <div class="row">
+            <button class="btn btn-sm" id="vb-copy" type="button" disabled>Copy</button>
+            <button class="btn btn-sm" id="vb-download" type="button" disabled>Download .txt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BASE64 TO VIDEO ================= -->
+  <section class="tool-view" id="tool-base64-to-video" hidden>
+    <div class="container">
+      <a class="back-link" href="#home">&larr; All tools</a>
+      <h1>Base64 to Video</h1>
+      <p class="tool-sub">Paste a Base64 Data URL or raw Base64 and turn it back into a playable video. Decoding happens locally.</p>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="field">
+            <label for="bv-input">Base64 input</label>
+            <textarea id="bv-input" placeholder="data:video/mp4;base64,… or raw Base64" spellcheck="false"></textarea>
+          </div>
+          <div class="field">
+            <label for="bv-mime">MIME type (if not included in the string)</label>
+            <select id="bv-mime">
+              <option value="">Auto-detect</option>
+              <option value="video/mp4">video/mp4</option>
+              <option value="video/webm">video/webm</option>
+              <option value="video/quicktime">video/quicktime (MOV)</option>
+              <option value="video/x-m4v">video/x-m4v</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-block" id="bv-run" type="button">Decode to Video</button>
+          <div class="msg error" id="bv-error" hidden role="alert"></div>
+        </div>
+
+        <div>
+          <div class="file-info" id="bv-info" hidden>
+            <p class="file-name" id="bv-name">—</p>
+            <dl>
+              <dt>Detected format</dt><dd id="bv-format">—</dd>
+              <dt>File size</dt><dd id="bv-size">—</dd>
+            </dl>
+          </div>
+          <div class="preview-box" id="bv-preview">
+            <span class="preview-empty">No video decoded</span>
+          </div>
+          <div class="mt-16">
+            <button class="btn btn-primary btn-block" id="bv-download" type="button" disabled>Download Video</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PHOTO TO BASE64 ================= -->
+  <section class="tool-view" id="tool-photo-to-base64" hidden>
+    <div class="container">
+      <a class="back-link" href="#home">&larr; All tools</a>
+      <h1>Photo to Base64</h1>
+      <p class="tool-sub">Convert an image into a Base64 Data URL. Nothing leaves your device.</p>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="field">
+            <label for="pb-file">Select image</label>
+            <input id="pb-file" type="file" accept="image/*">
+          </div>
+          <div class="file-info" id="pb-info" hidden>
+            <p class="file-name" id="pb-name">—</p>
+            <dl>
+              <dt>Size</dt><dd id="pb-size">—</dd>
+              <dt>Format</dt><dd id="pb-format">—</dd>
+            </dl>
+          </div>
+          <button class="btn btn-primary btn-block" id="pb-run" type="button" hidden>Convert to Base64</button>
+          <div class="msg warn" id="pb-warn" hidden>Very large images produce very long Base64 strings. This may use significant memory.</div>
+          <div class="msg error" id="pb-error" hidden role="alert"></div>
+        </div>
+
+        <div>
+          <div class="preview-box" id="pb-preview">
+            <span class="preview-empty">No image selected</span>
+          </div>
+          <div class="field mt-16">
+            <div class="spread">
+              <label for="pb-output">Base64 output</label>
+              <span class="count-note" id="pb-count"></span>
+            </div>
+            <textarea id="pb-output" readonly placeholder="Base64 output appears here…" spellcheck="false" aria-label="Base64 output"></textarea>
+          </div>
+          <div class="row">
+            <button class="btn btn-sm" id="pb-copy" type="button" disabled>Copy</button>
+            <button class="btn btn-sm" id="pb-download" type="button" disabled>Download .txt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BASE64 TO PHOTO ================= -->
+  <section class="tool-view" id="tool-base64-to-photo" hidden>
+    <div class="container">
+      <a class="back-link" href="#home">&larr; All tools</a>
+      <h1>Base64 to Photo</h1>
+      <p class="tool-sub">Paste a Base64 Data URL or raw Base64 and decode it back into an image, locally.</p>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="field">
+            <label for="bp-input">Base64 input</label>
+            <textarea id="bp-input" placeholder="data:image/png;base64,… or raw Base64" spellcheck="false"></textarea>
+          </div>
+          <div class="field">
+            <label for="bp-mime">MIME type (if not included in the string)</label>
+            <select id="bp-mime">
+              <option value="">Auto-detect</option>
+              <option value="image/jpeg">image/jpeg</option>
+              <option value="image/png">image/png</option>
+              <option value="image/webp">image/webp</option>
+              <option value="image/gif">image/gif</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-block" id="bp-run" type="button">Decode to Image</button>
+          <div class="msg error" id="bp-error" hidden role="alert"></div>
+        </div>
+
+        <div>
+          <div class="file-info" id="bp-info" hidden>
+            <p class="file-name" id="bp-name">—</p>
+            <dl>
+              <dt>Detected format</dt><dd id="bp-format">—</dd>
+              <dt>File size</dt><dd id="bp-size">—</dd>
+            </dl>
+          </div>
+          <div class="preview-box" id="bp-preview">
+            <span class="preview-empty">No image decoded</span>
+          </div>
+          <div class="mt-16">
+            <button class="btn btn-primary btn-block" id="bp-download" type="button" disabled>Download Image</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <span class="brand">Fácil</span>
+      <p>Simple tools. No hassle.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Quick Links</h4>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="terms.html">Terms Of Uses</a></li>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+        <li><a href="developer.html">Developer</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Social</h4>
+      <div class="socials">
+        <a href="https://github.com/ItsNobodyX" target="_blank" rel="noopener noreferrer" aria-label="GitHub: Developer profile">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.4-5.26 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.2.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>
+        </a>
+        <a href="https://www.linkedin.com/in/nikhil-kumar-31b914341" target="_blank" rel="noopener noreferrer" aria-label="Developer Profile: Follow me">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.55V9h3.57v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg>
+        </a>
+        <a href="https://www.linkedin.com/company/kimitechnologies/" target="_blank" rel="noopener noreferrer" aria-label="Company Profile: Follow page">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.13 1.45-2.13 2.94v5.67H9.35V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.55V9h3.57v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></svg>
+        </a>
+        <a href="https://x.com/mrnooffline" target="_blank" rel="noopener noreferrer" aria-label="Developer Profile: Follow me">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.22-6.82-5.97 6.82H1.66l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.02 4.13H5.06l12.02 15.64Z"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© 2026 Fácil. All processing happens in your browser.</span>
+    <span>Simple tools. No hassle.</span>
+  </div>
+</footer>
+
+<script src="script.js" defer></script>
+</body>
+</html>
