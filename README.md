@@ -230,7 +230,7 @@ Copyright © 2026 ItsNobodyX.
 If Fácil saved you a few minutes, please consider giving it a star. It helps
 more people find the project and it genuinely motivates continued work.
 
-[![Star on GitHub](https://img.shields.io/github/stars/USERNAME/REPO?style=social)](https://github.com/USERNAME/REPO)
+[![Star on GitHub](https://img.shields.io/github/stars/ItsNobodyX/facil?style=social)](https://github.com/ItsNobodyX/facil)
 
 ## Author
 
