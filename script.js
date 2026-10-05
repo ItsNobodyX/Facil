@@ -84,16 +84,21 @@
 
   function downloadBlob(blob, filename) {
     if (!blob) return;
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = sanitizeFilename(filename);
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function () {
-      a.remove();
-      URL.revokeObjectURL(url);
-    }, 1000);
+    try {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = sanitizeFilename(filename);
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        a.remove();
+        try { URL.revokeObjectURL(url); } catch (e) {}
+      }, 1000);
+    } catch (e) {
+      console.error("Download failed:", e);
+      throw e;
+    }
   }
 
   function showMsg(el, text, kind) {
@@ -126,12 +131,11 @@
 
   function copyText(text, btn) {
     var value = String(text || "");
-    if (!value) return;
-    if (value.length > 6 * 1024 * 1024) {
+    if (!value) {
       if (btn) {
-        var old = btn.textContent;
-        btn.textContent = "Too large";
-        setTimeout(function () { btn.textContent = old; }, 1800);
+        var prev = btn.textContent;
+        btn.textContent = "Nothing to copy";
+        setTimeout(function () { btn.textContent = prev; }, 1800);
       }
       return;
     }
@@ -143,8 +147,16 @@
       setTimeout(function () { btn.textContent = old; }, 1500);
     }
 
+    function failCopy() {
+      if (btn) {
+        var prev = btn.textContent;
+        btn.textContent = "Copy failed";
+        setTimeout(function () { btn.textContent = prev; }, 1800);
+      }
+    }
+
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(value).then(done).catch(function () {
+      navigator.clipboard.writeText(value).then(done).catch(function (e) {
         try {
           var ta = document.createElement("textarea");
           ta.value = value;
@@ -152,18 +164,16 @@
           ta.style.position = "fixed";
           ta.style.opacity = "0";
           ta.style.left = "-9999px";
+          ta.style.top = "-9999px";
           document.body.appendChild(ta);
           ta.focus();
           ta.select();
-          document.execCommand("copy");
+          var success = document.execCommand("copy");
           ta.remove();
-          done();
-        } catch (e) {
-          if (btn) {
-            var prev = btn.textContent;
-            btn.textContent = "Copy failed";
-            setTimeout(function () { btn.textContent = prev; }, 1800);
-          }
+          if (success) done();
+          else failCopy();
+        } catch (e2) {
+          failCopy();
         }
       });
       return;
@@ -176,18 +186,16 @@
       ta.style.position = "fixed";
       ta.style.opacity = "0";
       ta.style.left = "-9999px";
+      ta.style.top = "-9999px";
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
-      document.execCommand("copy");
+      var success = document.execCommand("copy");
       ta.remove();
-      done();
+      if (success) done();
+      else failCopy();
     } catch (e) {
-      if (btn) {
-        var prev = btn.textContent;
-        btn.textContent = "Copy failed";
-        setTimeout(function () { btn.textContent = prev; }, 1800);
-      }
+      failCopy();
     }
   }
 
@@ -202,6 +210,22 @@
         };
       }
       reader.readAsDataURL(file);
+    });
+  }
+
+  function readFileChunkAsBase64(file, chunkIndex, chunkSize, onProgress) {
+    return new Promise(function (resolve, reject) {
+      var start = chunkIndex * chunkSize;
+      var end = Math.min(start + chunkSize, file.size);
+      var chunk = file.slice(start, end);
+      var reader = new FileReader();
+      reader.onload = function () {
+        var dataUrl = reader.result;
+        var base64 = dataUrl.split(",")[1] || "";
+        resolve(base64);
+      };
+      reader.onerror = function () { reject(new Error("chunk-read-failed")); };
+      reader.readAsDataURL(chunk);
     });
   }
 
@@ -516,7 +540,7 @@
   }
 
   /* ================================================================== *
-   * VIDEO TO BASE64
+   * VIDEO TO BASE64 (WITH CHUNKED PROCESSING FOR LARGE FILES)
    * ================================================================== */
   function initVideoToBase64() {
     var file = document.getElementById("vb-file");
@@ -533,7 +557,7 @@
     var bar = document.getElementById("vb-bar");
     var status = document.getElementById("vb-status");
 
-    var state = { file: null, dataUrl: "" };
+    var state = { file: null, dataUrl: "", chunks: [], totalSize: 0, mimeType: "" };
 
     file.addEventListener("change", function () {
       hideMsg(errEl); hideMsg(warn); hideProgress(progWrap);
@@ -546,56 +570,105 @@
         return;
       }
       state.file = f;
+      state.mimeType = f.type || "video/mp4";
+      state.chunks = [];
+      state.totalSize = 0;
       document.getElementById("vb-name").textContent = sanitizeFilename(f.name);
       document.getElementById("vb-size").textContent = formatBytes(f.size);
       document.getElementById("vb-format").textContent = f.type || "unknown";
       info.hidden = false; runBtn.hidden = false;
       if (f.size > 8 * 1024 * 1024) {
-        showMsg(warn, "Large videos can produce extremely large Base64 strings (roughly 33% bigger than the file itself). This may use significant memory and the text may be slow to copy.", "warn");
+        showMsg(warn, "Large videos can produce extremely large Base64 strings (roughly 33% bigger than the file itself). This will be processed in chunks to prevent memory issues.", "warn");
       }
     });
 
     runBtn.addEventListener("click", async function () {
       if (!state.file) return;
-      hideMsg(errEl);
+      hideMsg(errEl); hideMsg(warn);
       runBtn.disabled = true; runBtn.textContent = "Converting…";
       setProgress(progWrap, bar, "Reading file…", 0);
-      try {
-        var dataUrl = await readFileAsDataURL(state.file, function (p) {
-          setProgress(progWrap, bar, "Reading file… " + Math.round(p * 100) + "%", p * 100);
-        });
-        state.dataUrl = dataUrl;
-        out.value = dataUrl;
-        count.textContent = dataUrl.length.toLocaleString() + " characters";
 
-        if (dataUrl.length > 12 * 1024 * 1024) {
-          showMsg(warn, "This Base64 output is extremely large. Copying may be unreliable in this browser. Download the .txt file instead if needed.", "warn");
-          copyBtn.disabled = true;
-          dlBtn.disabled = false;
-        } else {
-          hideMsg(warn);
-          copyBtn.disabled = false;
-          dlBtn.disabled = false;
+      var fileSize = state.file.size;
+      var CHUNK_SIZE = 5 * 1024 * 1024;
+      var numChunks = Math.ceil(fileSize / CHUNK_SIZE);
+
+      try {
+        state.chunks = [];
+        state.totalSize = 0;
+
+        for (var i = 0; i < numChunks; i++) {
+          var chunkBase64 = await readFileChunkAsBase64(state.file, i, CHUNK_SIZE);
+          state.chunks.push(chunkBase64);
+          state.totalSize += chunkBase64.length;
+          var progress = ((i + 1) / numChunks) * 100;
+          setProgress(progWrap, bar, "Processing chunk " + (i + 1) + " of " + numChunks + "…", Math.min(progress, 99));
+          await new Promise(function (resolve) { setTimeout(resolve, 50); });
+        }
+
+        var mimeHeader = "data:" + state.mimeType + ";base64,";
+        state.dataUrl = mimeHeader + state.chunks.join("");
+        out.value = state.dataUrl;
+        count.textContent = state.dataUrl.length.toLocaleString() + " characters";
+        copyBtn.disabled = false;
+        dlBtn.disabled = false;
+
+        if (state.dataUrl.length > 50 * 1024 * 1024) {
+          showMsg(warn, "This Base64 output is extremely large (" + formatBytes(state.dataUrl.length) + "). Copying may work but download should split into multiple files.", "warn");
+        } else if (state.dataUrl.length > 12 * 1024 * 1024) {
+          showMsg(warn, "This Base64 output is very large (" + formatBytes(state.dataUrl.length) + "). Copying/downloading may be slow but will work.", "warn");
         }
 
         setProgress(progWrap, bar, "Done", 100);
         setTimeout(function () { hideProgress(progWrap); }, 600);
       } catch (e) {
         hideProgress(progWrap);
-        showMsg(errEl, "Something went wrong while reading this video. It may be too large for your device's memory.", "error");
+        showMsg(errEl, "Something went wrong while reading this video. Error: " + (e.message || "unknown"), "error");
+        copyBtn.disabled = true;
+        dlBtn.disabled = true;
       } finally {
         runBtn.disabled = false; runBtn.textContent = "Convert to Base64";
       }
     });
 
-    copyBtn.addEventListener("click", function () { copyText(out.value, copyBtn); });
+    copyBtn.addEventListener("click", function () {
+      hideMsg(errEl);
+      if (!out.value) {
+        showMsg(errEl, "No Base64 to copy. Convert a video first.", "error");
+        return;
+      }
+      if (out.value.length > 20 * 1024 * 1024) {
+        showMsg(errEl, "Output is too large for clipboard. Please download instead.", "warn");
+        return;
+      }
+      copyText(out.value, copyBtn);
+    });
+
     dlBtn.addEventListener("click", function () {
-      if (!state.dataUrl) return;
+      hideMsg(errEl);
+      if (!state.dataUrl) {
+        showMsg(errEl, "No Base64 to download. Convert a video first.", "error");
+        return;
+      }
       try {
-        var blob = createTextBlob(state.dataUrl, 12 * 1024 * 1024);
-        downloadBlob(blob, "video-base64.txt");
+        var chunkSize = 10 * 1024 * 1024;
+        if (state.dataUrl.length > 100 * 1024 * 1024) {
+          showMsg(errEl, "Output is extremely large. Consider using a smaller video. Attempting split download in multiple parts…", "warn");
+          var parts = [];
+          for (var i = 0; i < state.dataUrl.length; i += chunkSize) {
+            parts.push(state.dataUrl.slice(i, i + chunkSize));
+          }
+          parts.forEach(function (part, idx) {
+            var blob = createTextBlob(part, 200 * 1024 * 1024);
+            var fileName = parts.length > 1 ? "video-base64-part-" + (idx + 1) + ".txt" : "video-base64.txt";
+            downloadBlob(blob, fileName);
+            setTimeout(function () {}, 500);
+          });
+        } else {
+          var blob = createTextBlob(state.dataUrl, 200 * 1024 * 1024);
+          downloadBlob(blob, "video-base64.txt");
+        }
       } catch (e) {
-        showMsg(errEl, "This Base64 output is too large to download safely in this browser. Please use a smaller video.", "warn");
+        showMsg(errEl, "Download failed: " + (e.message || "unknown error"), "error");
       }
     });
   }
