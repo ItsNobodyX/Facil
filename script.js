@@ -69,15 +69,31 @@
     return map[mime] || (mime && mime.split("/")[1]) || "bin";
   }
 
+  function createTextBlob(text, maxChars) {
+    var source = String(text || "");
+    var limit = Number(maxChars) || (12 * 1024 * 1024);
+    if (!source) return new Blob([], { type: "text/plain;charset=utf-8" });
+    if (source.length > limit) throw new Error("too-large");
+    var parts = [];
+    var chunkSize = 256 * 1024;
+    for (var i = 0; i < source.length; i += chunkSize) {
+      parts.push(source.slice(i, i + chunkSize));
+    }
+    return new Blob(parts, { type: "text/plain;charset=utf-8" });
+  }
+
   function downloadBlob(blob, filename) {
+    if (!blob) return;
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url;
     a.download = sanitizeFilename(filename);
     document.body.appendChild(a);
     a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+    setTimeout(function () {
+      a.remove();
+      URL.revokeObjectURL(url);
+    }, 1000);
   }
 
   function showMsg(el, text, kind) {
@@ -109,30 +125,72 @@
   }
 
   function copyText(text, btn) {
+    var value = String(text || "");
+    if (!value) return;
+    if (value.length > 6 * 1024 * 1024) {
+      if (btn) {
+        var old = btn.textContent;
+        btn.textContent = "Too large";
+        setTimeout(function () { btn.textContent = old; }, 1800);
+      }
+      return;
+    }
+
     function done() {
       if (!btn) return;
       var old = btn.textContent;
       btn.textContent = "Copied";
       setTimeout(function () { btn.textContent = old; }, 1500);
     }
+
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done).catch(function () { fallback(); });
-    } else { fallback(); }
-    function fallback() {
-      try {
-        var ta = document.createElement("textarea");
-        ta.value = text;
-        ta.setAttribute("readonly", "");
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        ta.remove();
-        done();
-      } catch (e) {}
+      navigator.clipboard.writeText(value).then(done).catch(function () {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = value;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          ta.style.left = "-9999px";
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+          done();
+        } catch (e) {
+          if (btn) {
+            var prev = btn.textContent;
+            btn.textContent = "Copy failed";
+            setTimeout(function () { btn.textContent = prev; }, 1800);
+          }
+        }
+      });
+      return;
     }
+
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = value;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+      done();
+    } catch (e) {
+      if (btn) {
+        var prev = btn.textContent;
+        btn.textContent = "Copy failed";
+        setTimeout(function () { btn.textContent = prev; }, 1800);
       }
+    }
+  }
+
   function readFileAsDataURL(file, onProgress) {
     return new Promise(function (resolve, reject) {
       var reader = new FileReader();
@@ -156,7 +214,6 @@
       mime = (m[1] || "").trim() || null;
       payload = m[3];
     } else if (/^data:/i.test(text)) {
-      // data URL that is not base64 (e.g. URL-encoded) — unsupported here
       throw new Error("not-base64");
     }
     payload = payload.replace(/\s+/g, "");
@@ -201,6 +258,7 @@
     window.addEventListener("hashchange", route);
     route();
   }
+
   /* ================================================================== *
    * IMAGE COMPRESSOR
    * ================================================================== */
@@ -238,7 +296,7 @@
         state.file = f; state.img = img; state.url = url; state.name = f.name;
         document.getElementById("ic-name").textContent = sanitizeFilename(f.name);
         document.getElementById("ic-size").textContent = formatBytes(f.size);
-        document.getElementById("ic-dims").textContent = img.naturalWidth + " \u00d7 " + img.naturalHeight;
+        document.getElementById("ic-dims").textContent = img.naturalWidth + " × " + img.naturalHeight;
         document.getElementById("ic-fmt").textContent = f.type || "unknown";
         preview.innerHTML = "";
         var p = document.createElement("img");
@@ -268,7 +326,7 @@
       if (!state.img) return;
       hideMsg(errEl);
       runBtn.disabled = true;
-      runBtn.textContent = "Compressing\u2026";
+      runBtn.textContent = "Compressing…";
       result.hidden = true;
       try {
         var type = fmtSel.value;
@@ -321,7 +379,8 @@
       var ext = extForMime(fmtSel.value);
       downloadBlob(state.blob, "image-compressed." + ext);
     });
-                 }
+  }
+
   /* ================================================================== *
    * PHOTO TO BASE64
    * ================================================================== */
@@ -370,7 +429,7 @@
 
     runBtn.addEventListener("click", async function () {
       if (!state.file) return;
-      hideMsg(errEl); runBtn.disabled = true; runBtn.textContent = "Converting\u2026";
+      hideMsg(errEl); runBtn.disabled = true; runBtn.textContent = "Converting…";
       try {
         var dataUrl = await readFileAsDataURL(state.file);
         state.dataUrl = dataUrl;
@@ -387,7 +446,12 @@
     copyBtn.addEventListener("click", function () { copyText(out.value, copyBtn); });
     dlBtn.addEventListener("click", function () {
       if (!state.dataUrl) return;
-      downloadBlob(new Blob([state.dataUrl], { type: "text/plain;charset=utf-8" }), "image-base64.txt");
+      try {
+        var blob = createTextBlob(state.dataUrl, 12 * 1024 * 1024);
+        downloadBlob(blob, "image-base64.txt");
+      } catch (e) {
+        showMsg(errEl, "This Base64 output is too large to download safely in this browser. Please use a smaller image.", "warn");
+      }
     });
   }
 
@@ -449,7 +513,8 @@
       if (!state.blob) return;
       downloadBlob(state.blob, "converted-image." + extForMime(state.mime || "image/png"));
     });
-                            }
+  }
+
   /* ================================================================== *
    * VIDEO TO BASE64
    * ================================================================== */
@@ -493,16 +558,26 @@
     runBtn.addEventListener("click", async function () {
       if (!state.file) return;
       hideMsg(errEl);
-      runBtn.disabled = true; runBtn.textContent = "Converting\u2026";
-      setProgress(progWrap, bar, "Reading file\u2026", 0);
+      runBtn.disabled = true; runBtn.textContent = "Converting…";
+      setProgress(progWrap, bar, "Reading file…", 0);
       try {
         var dataUrl = await readFileAsDataURL(state.file, function (p) {
-          setProgress(progWrap, bar, "Reading file\u2026 " + Math.round(p * 100) + "%", p * 100);
+          setProgress(progWrap, bar, "Reading file… " + Math.round(p * 100) + "%", p * 100);
         });
-        out.value = dataUrl;
         state.dataUrl = dataUrl;
+        out.value = dataUrl;
         count.textContent = dataUrl.length.toLocaleString() + " characters";
-        copyBtn.disabled = false; dlBtn.disabled = false;
+
+        if (dataUrl.length > 12 * 1024 * 1024) {
+          showMsg(warn, "This Base64 output is extremely large. Copying/downloading may be unreliable in this browser. Please use a smaller video or a desktop browser for large files.", "warn");
+          copyBtn.disabled = true;
+          dlBtn.disabled = true;
+        } else {
+          hideMsg(warn);
+          copyBtn.disabled = false;
+          dlBtn.disabled = false;
+        }
+
         setProgress(progWrap, bar, "Done", 100);
         setTimeout(function () { hideProgress(progWrap); }, 600);
       } catch (e) {
@@ -516,7 +591,12 @@
     copyBtn.addEventListener("click", function () { copyText(out.value, copyBtn); });
     dlBtn.addEventListener("click", function () {
       if (!state.dataUrl) return;
-      downloadBlob(new Blob([state.dataUrl], { type: "text/plain;charset=utf-8" }), "video-base64.txt");
+      try {
+        var blob = createTextBlob(state.dataUrl, 12 * 1024 * 1024);
+        downloadBlob(blob, "video-base64.txt");
+      } catch (e) {
+        showMsg(errEl, "This Base64 output is too large to download safely in this browser. Please use a smaller video.", "warn");
+      }
     });
   }
 
@@ -576,6 +656,7 @@
       downloadBlob(state.blob, "converted-video." + extForMime(state.mime || "video/mp4"));
     });
   }
+
   /* ================================================================== *
    * VIDEO COMPRESSOR
    * ================================================================== */
@@ -593,10 +674,33 @@
     var bar = document.getElementById("vc-bar");
     var status = document.getElementById("vc-status");
     var customWrap = document.getElementById("vc-custom-wrap");
+    var modeInputs = document.querySelectorAll('input[name="vc-mode"]');
+    var qualitySlider = document.getElementById("vc-quality-slider");
+    var qualityLabel = document.getElementById("vc-q-val");
+    var vcFormat = document.getElementById("vc-format");
 
     var state = { file: null, url: null, video: null, blob: null, duration: 0 };
 
-    // default target = 25 MB
+    function updateModeUI() {
+      var selectedMode = document.querySelector('input[name="vc-mode"]:checked');
+      var sizeMode = document.getElementById("vc-size-mode");
+      var qualityMode = document.getElementById("vc-quality-mode");
+      if (!selectedMode) return;
+      var isQuality = selectedMode.value === "quality";
+      sizeMode.hidden = isQuality;
+      qualityMode.hidden = !isQuality;
+    }
+
+    if (qualitySlider) {
+      qualitySlider.addEventListener("input", function () {
+        qualityLabel.textContent = qualitySlider.value;
+      });
+    }
+
+    Array.prototype.forEach.call(modeInputs, function (modeInput) {
+      modeInput.addEventListener("change", updateModeUI);
+    });
+
     var defaultRadio = document.querySelector('input[name="vc-target"][value="25"]');
     if (defaultRadio) defaultRadio.checked = true;
 
@@ -627,7 +731,7 @@
         document.getElementById("vc-size").textContent = formatBytes(f.size);
         document.getElementById("vc-duration").textContent = formatDuration(video.duration);
         document.getElementById("vc-res").textContent =
-          video.videoWidth ? (video.videoWidth + " \u00d7 " + video.videoHeight) : "unavailable";
+          video.videoWidth ? (video.videoWidth + " × " + video.videoHeight) : "unavailable";
         document.getElementById("vc-format").textContent = f.type || "unknown";
         preview.innerHTML = "";
         var pv = document.createElement("video");
@@ -641,7 +745,15 @@
       video.src = url;
     });
 
-    function pickMime() {
+    function pickMime(forceType) {
+      if (forceType) {
+        var candidateType = forceType.split(";")[0];
+        if (candidateType === "video/mp4" && MediaRecorder && MediaRecorder.isTypeSupported) {
+          return forceType;
+        }
+        return forceType;
+      }
+
       var candidates = [
         "video/webm;codecs=vp9,opus",
         "video/webm;codecs=vp8,opus",
@@ -659,21 +771,32 @@
       if (!state.video) return;
       hideMsg(errEl); result.hidden = true;
 
-      if (typeof MediaRecorder === "undefined" ||
-          !HTMLCanvasElement.prototype.captureStream) {
+      if (typeof MediaRecorder === "undefined" || !HTMLCanvasElement.prototype.captureStream) {
         showMsg(errEl, "Your browser doesn't support in-browser video encoding (MediaRecorder / canvas capture). Try a recent version of Chrome, Edge, Firefox, or Safari.", "error");
         return;
       }
-      var mime = pickMime();
+
+      var mime = pickMime(vcFormat ? vcFormat.value : null);
       if (!mime) {
         showMsg(errEl, "Your browser doesn't support any video format we can encode. Please try a different browser.", "error");
         return;
       }
 
-      var sel = document.querySelector('input[name="vc-target"]:checked');
-      if (!sel) { showMsg(errEl, "Choose a target size first.", "error"); return; }
-      var targetMB = sel.value === "custom" ? parseFloat(document.getElementById("vc-custom").value) : parseFloat(sel.value);
-      if (!(targetMB > 0)) { showMsg(errEl, "Enter a valid custom target size in MB.", "error"); return; }
+      var mode = document.querySelector('input[name="vc-mode"]:checked');
+      var selectedMode = mode ? mode.value : "size";
+
+      if (selectedMode === "size") {
+        var sel = document.querySelector('input[name="vc-target"]:checked');
+        if (!sel) { showMsg(errEl, "Choose a target size first.", "error"); return; }
+        var targetMB = sel.value === "custom" ? parseFloat(document.getElementById("vc-custom").value) : parseFloat(sel.value);
+        if (!(targetMB > 0)) { showMsg(errEl, "Enter a valid custom target size in MB.", "error"); return; }
+      } else {
+        var qualityValue = parseFloat(qualitySlider.value) / 100;
+        if (!(qualityValue > 0 && qualityValue <= 1)) {
+          showMsg(errEl, "Choose a valid video quality value.", "error");
+          return;
+        }
+      }
 
       var duration = state.duration;
       if (!isFinite(duration) || duration <= 0) {
@@ -681,15 +804,27 @@
         return;
       }
 
-      runBtn.disabled = true; runBtn.textContent = "Compressing\u2026";
-      setProgress(progWrap, bar, "Preparing video\u2026", 0);
+      runBtn.disabled = true; runBtn.textContent = "Compressing…";
+      setProgress(progWrap, bar, "Preparing video…", 0);
 
       var audioBits = 128000;
-      var totalBits = targetMB * 1024 * 1024 * 8;
-      var videoBits = Math.round(totalBits / duration - audioBits);
-      videoBits = Math.max(120000, videoBits);
+      var targetMB = selectedMode === "size"
+        ? (document.querySelector('input[name="vc-target"]:checked').value === "custom"
+            ? parseFloat(document.getElementById("vc-custom").value)
+            : parseFloat(document.querySelector('input[name="vc-target"]:checked').value))
+        : null;
 
-      // cap dimensions for memory sanity
+      var videoBits = 0;
+      if (selectedMode === "size") {
+        var totalBits = targetMB * 1024 * 1024 * 8;
+        videoBits = Math.round(totalBits / duration - audioBits);
+        videoBits = Math.max(120000, videoBits);
+      } else {
+        var qualityRatio = parseFloat(qualitySlider.value) / 100;
+        var baseBitrate = 1800000 * qualityRatio;
+        videoBits = Math.max(180000, baseBitrate);
+      }
+
       var srcW = state.video.videoWidth || 1280;
       var srcH = state.video.videoHeight || 720;
       var maxSide = 1920;
@@ -706,8 +841,7 @@
 
       var audioCtx = null;
       try {
-        var vStream = video.captureStream ? video.captureStream()
-          : (video.mozCaptureStream ? video.mozCaptureStream() : null);
+        var vStream = video.captureStream ? video.captureStream() : (video.mozCaptureStream ? video.mozCaptureStream() : null);
         var added = 0;
         if (vStream && vStream.getAudioTracks) {
           vStream.getAudioTracks().forEach(function (t) { stream.addTrack(t); added++; });
@@ -720,7 +854,7 @@
           srcNode.connect(dest);
           if (dest.stream.getAudioTracks()[0]) stream.addTrack(dest.stream.getAudioTracks()[0]);
         }
-      } catch (e) { /* audio is best-effort; video-only is acceptable */ }
+      } catch (e) {}
 
       var chunks = [];
       var recorder;
@@ -750,16 +884,14 @@
         }
         try { ctx.drawImage(video, 0, 0, outW, outH); } catch (e) {}
         var p = Math.min(99, (video.currentTime / duration) * 100);
-        var label = p < 3 ? "Preparing video\u2026"
-          : p > 94 ? "Almost done\u2026"
-          : "Processing " + Math.round(p) + "%";
+        var label = p < 3 ? "Preparing video…" : p > 94 ? "Almost done…" : "Processing " + Math.round(p) + "%";
         setProgress(progWrap, bar, label, p);
         rafId = requestAnimationFrame(drawLoop);
       }
 
       function drawLoopStop() {
         cancelAnimationFrame(rafId);
-        setProgress(progWrap, bar, "Finalizing\u2026", 99);
+        setProgress(progWrap, bar, "Finalizing…", 99);
         try { recorder.stop(); } catch (e) {}
       }
 
@@ -789,7 +921,7 @@
         result.hidden = false;
         runBtn.disabled = false; runBtn.textContent = "Compress Video";
         if (neu >= orig) {
-          showMsg(errEl, "The re-encoded video isn't smaller than the original at this target. Try a smaller target size.", "warn");
+          showMsg(errEl, "The re-encoded video isn't smaller than the original at this target. Try a smaller target size or lower quality.", "warn");
         }
       };
 
@@ -799,7 +931,6 @@
         runBtn.disabled = false; runBtn.textContent = "Compress Video";
       };
 
-      // begin
       try {
         video.currentTime = 0;
         recorder.start(1000);
@@ -818,7 +949,8 @@
       var ext = /mp4/.test(type) ? "mp4" : "webm";
       downloadBlob(state.blob, "video-compressed." + ext);
     });
-      }
+  }
+
   /* ------------------------------------------------------------------ *
    * Boot
    * ------------------------------------------------------------------ */
