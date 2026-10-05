@@ -569,9 +569,9 @@
         count.textContent = dataUrl.length.toLocaleString() + " characters";
 
         if (dataUrl.length > 12 * 1024 * 1024) {
-          showMsg(warn, "This Base64 output is extremely large. Copying/downloading may be unreliable in this browser. Please use a smaller video or a desktop browser for large files.", "warn");
+          showMsg(warn, "This Base64 output is extremely large. Copying may be unreliable in this browser. Download the .txt file instead if needed.", "warn");
           copyBtn.disabled = true;
-          dlBtn.disabled = true;
+          dlBtn.disabled = false;
         } else {
           hideMsg(warn);
           copyBtn.disabled = false;
