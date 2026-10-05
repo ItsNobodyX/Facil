@@ -902,15 +902,16 @@
         if (audioCtx && audioCtx.close) { try { audioCtx.close(); } catch (e) {} }
         stream.getTracks().forEach(function (t) { try { t.stop(); } catch (e) {} });
 
-        var blob = new Blob(chunks, { type: mime.split(";")[0] });
-        if (!blob.size) {
+        var baseBlob = new Blob(chunks, { type: mime.split(";")[0] });
+        if (!baseBlob.size) {
           hideProgress(progWrap);
           showMsg(errEl, "Something went wrong while processing this video. Please try another file or a smaller video.", "error");
           runBtn.disabled = false; runBtn.textContent = "Compress Video";
           return;
         }
-        state.blob = blob;
-        var orig = state.file.size, neu = blob.size;
+
+        state.blob = baseBlob;
+        var orig = state.file.size, neu = baseBlob.size;
         var saved = Math.max(0, orig - neu);
         var pct = orig > 0 ? (saved / orig) * 100 : 0;
         document.getElementById("vc-r-orig").textContent = formatBytes(orig);
@@ -923,6 +924,8 @@
         if (neu >= orig) {
           showMsg(errEl, "The re-encoded video isn't smaller than the original at this target. Try a smaller target size or lower quality.", "warn");
         }
+
+        showMsg(errEl, "Note: Compressed video duration metadata may show as 00:00 in some file managers but will play correctly. Re-encoding tools don't preserve full metadata.", "warn");
       };
 
       recorder.onerror = function () {
